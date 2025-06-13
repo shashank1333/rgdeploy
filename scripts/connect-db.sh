@@ -32,11 +32,11 @@ if [ -z "$mydocdburl" ]; then
 	echo "Could not find DB URL. Exiting"
 	exit 1
 fi
-
+encoded_pwd=$(python3 -c "import urllib.parse; print(urllib.parse.quote('''$mydbuserpwd'''))")
 if command -v mongosh >/dev/null 2>&1; then
-	echo "Using mongosh to connect..."
-	mongosh --ssl --host "$mydocdburl:27017" --sslCAFile "$RG_HOME/config/rds-combined-ca-bundle.pem" \
-		--username "$mydbuser" --password "$mydbuserpwd"
+    echo "Using mongosh to connect..."
+    mongosh "mongodb://${mydbuser}:${encoded_pwd}@${mydocdburl}:${dbport}/${dbname}?retryWrites=false&tls=true" \
+        --tlsCAFile "$RG_HOME/config/rds-combined-ca-bundle.pem"
 elif command -v mongo >/dev/null 2>&1; then
 	echo "Using mongo to connect..."
 	mongo --ssl --host "$mydocdburl:27017" --sslCAFile "$RG_HOME/config/rds-combined-ca-bundle.pem" \
