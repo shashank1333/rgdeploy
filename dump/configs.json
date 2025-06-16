@@ -300,23 +300,6 @@
   },
   {
     "_id": {
-      "$oid": "66f51463cda70247a3418939"
-    },
-    "key": "azure-region",
-    "helpText": [
-      {
-        "key": "(US) East US",
-        "value": "eastus"
-      },
-      {
-        "key": "(US) East US 2",
-        "value": "eastus2"
-      }
-    ],
-    "configType": "azure-region"
-  },
-  {
-    "_id": {
       "$oid": "679868604885f0c06d65445c"
     },
     "key": "catalogMetaData",
@@ -622,9 +605,7 @@
       "$oid": "680f5d794266d6c035d7518d"
     },
     "key": "egressReviewersList",
-    "value": [
-      "anusha.janardhan+rpqapi@relevancelab.com",
-      "sundeep.mallya+da@relevancelab.com"
+    "value": [ 
     ],
     "helpText": [
       "List of reviewers for egress process"
@@ -636,36 +617,6 @@
     },
     "key": "kmsKeys",
     "Value": [
-      "arn:aws:kms:us-east-2:045938549113:key/aad8ec99-e94a-4c7f-b418-91c74341f98c",
-      "arn:aws:kms:us-east-1:045938549113:key/353666f1-663e-4c87-a8f1-52b2c79cf4b9",
-      "arn:aws:kms:us-east-1:045938549113:key/5f182db7-f3e3-4e75-bf75-c9f85c321718",
-      "arn:aws:kms:us-east-1:045938549113:key/613749ab-dca4-48c2-b69a-326c6d4cdf88",
-      "arn:aws:kms:us-east-1:045938549113:key/974a9cea-0f84-48c3-a90d-858e09f176ed",
-      "arn:aws:kms:us-east-1:045938549113:key/cd3df780-0136-43d9-8e0a-d0cf33b5fdca",
-      "arn:aws:kms:us-east-1:045938549113:key/d39ab705-7d0c-42ae-967e-ed8924b990f6",
-      "arn:aws:kms:us-west-1:045938549113:key/2d05346a-68b4-48cc-ac9d-534aa0ffb99a",
-      "arn:aws:kms:us-west-1:045938549113:key/3cfb6b60-4070-4117-a46b-11f3546b196e",
-      "arn:aws:kms:us-west-1:045938549113:key/47dcfb7b-137d-4f4d-a208-e23f9894f222",
-      "arn:aws:kms:us-west-1:045938549113:key/64771508-eaf4-490e-b3b0-629ff9121f31",
-      "arn:aws:kms:us-west-1:045938549113:key/6a553afa-af10-43fb-a65f-d85ef820c246",
-      "arn:aws:kms:us-west-1:045938549113:key/c6b54b5c-370c-43a3-8832-400dca232f75",
-      "arn:aws:kms:ap-southeast-1:045938549113:key/4cf043bb-9bff-41fd-9f57-d00cdc64d237",
-      "arn:aws:kms:ap-southeast-1:045938549113:key/e4a005ec-19f3-4c31-a5f1-a44ed5061e17",
-      "arn:aws:kms:ap-southeast-2:045938549113:key/03f02fce-bc87-4c8e-8161-fb2ac68e87af",
-      "arn:aws:kms:ap-southeast-2:045938549113:key/0ff41859-45f1-4e89-98b4-d49e5f961521",
-      "arn:aws:kms:ap-southeast-2:045938549113:key/2d23a189-f920-43aa-9235-4fba3e4fa68d",
-      "arn:aws:kms:ap-southeast-2:045938549113:key/4f0d2ab4-7f17-4e7c-b141-0c8140358a83",
-      "arn:aws:kms:ap-southeast-2:045938549113:key/876e4f41-e452-441c-bc13-9c472a586638",
-      "arn:aws:kms:ap-southeast-2:045938549113:key/b8efc7e3-c097-4e66-83df-3b5875b5771d",
-      "arn:aws:kms:ap-southeast-2:045938549113:key/c4d6fe60-1d05-41ed-ac52-7fffadb718ac",
-      "arn:aws:kms:ap-southeast-2:045938549113:key/dd2cb602-4055-4809-802b-303177ea42c5",
-      "arn:aws:kms:ap-southeast-2:045938549113:key/fe4a69a9-2b02-4d8e-aa40-986b58d2cd13",
-      "arn:aws:kms:eu-west-2:045938549113:key/0cdabb10-546d-4855-8ac0-a08f9f75067f",
-      "arn:aws:kms:eu-west-2:045938549113:key/1e7d482f-8058-461f-8dae-7b092dd89518",
-      "arn:aws:kms:eu-west-2:045938549113:key/21295213-b2cb-403d-b7f1-1ac9df9793a4",
-      "arn:aws:kms:eu-west-2:045938549113:key/29c1e6e7-c799-4590-8257-c7422e2a7608",
-      "arn:aws:kms:eu-west-2:045938549113:key/84459bb3-0103-4825-a5d9-b84923d85b19",
-      "arn:aws:kms:eu-west-2:045938549113:key/c5e183d5-88b1-4e5f-9a8f-c8f92459e4c1"
     ]
   },
   {
@@ -834,54 +785,6 @@
       }
     ],
     "configType": "region"
-  },
-  {
-    "_id": {
-      "$oid": "6667fc265413a1f997ab66e8"
-    },
-    "key": "resourceTags",
-    "value": [
-      {
-        "Key": "CostCenter",
-        "Value": "PG000000"
-      },
-      {
-        "Key": "CriticalityTier",
-        "Value": "Business Operational"
-      },
-      {
-        "Key": "Compliance",
-        "Value": "HIPAA"
-      },
-      {
-        "Key": "Environment",
-        "Value": "QA"
-      },
-      {
-        "Key": "ApplicationName",
-        "Value": "ResearchGatewayQA"
-      },
-      {
-        "Key": "Department",
-        "Value": "DataScience"
-      },
-      {
-        "Key": "ApplicationCustodian",
-        "Value": "txs908"
-      },
-      {
-        "Key": "ServiceNow",
-        "Value": "XXX"
-      },
-      {
-        "Key": "departmentemail",
-        "Value": "txs908@miami.edu"
-      },
-      {
-        "Key": "UHITOwner",
-        "Value": "txs908"
-      }
-    ]
   },
   {
     "_id": {
