@@ -104,7 +104,8 @@ Resources:
           - PolicyName: !Join ['-', [Ref: Namespace, 's3-studydata-policy']]
             PolicyDocument: !Ref IamPolicyDocument
       ManagedPolicyArns:
-        - Ref: SSMPolicy            
+        - Ref: SSMPolicy
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
 
   InstanceProfile:
     Type: 'AWS::IAM::InstanceProfile'

@@ -90,6 +90,7 @@ Resources:
             PolicyDocument: !Ref IamPolicyDocument
       ManagedPolicyArns:
         - Ref: SSMPolicy
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
 
   InstanceProfile:
     Type: 'AWS::IAM::InstanceProfile'
