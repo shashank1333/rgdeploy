@@ -67,7 +67,7 @@ Resources:
   IAMRole:
     Type: 'AWS::IAM::Role'
     Properties:
-      RoleName: !Join ['-', [Ref: Namespace, 'ec2-role']]
+      RoleName: !Join ['-', [!Ref Namespace, 'ec2-role']]
       Path: '/'
       AssumeRolePolicyDocument:
         Version: '2012-10-17'

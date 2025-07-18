@@ -130,7 +130,7 @@ Resources:
 
                 # Get the region to build the parameter name
                 instance_region=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/placement/region)
-                echo "Retrieved region ${region} from metadata service"
+                echo "Retrieved region ${instance_region} from metadata service"
 
                 # Get the instance id to build the parameter name
                 instance_id=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-id)
