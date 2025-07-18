@@ -1,4 +1,4 @@
-Metadata: 
+Metadata:
   License: Apache-2.0
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'AWS CloudFormation Template to create an EC2 instance
@@ -23,7 +23,7 @@ Parameters:
   EBSVolumeSize:
     Description: The initial size of the volume (in GBs)  EBS will use for storage.
     Type: Number
-    Default: 8     
+    Default: 8
   InstanceType:
     Description: Choose the instance type e.g t3.small (2vCPU , 2GiB RAM) t3.medium (2vCPU , 4GiB RAM), t3.large (2vCPU, 8GiB RAM).
     Type: String
@@ -58,12 +58,12 @@ Parameters:
     Description: Required Port mappings
   ConnectToPort:
     Type: Number
-    Description: Required Port mappings 
+    Description: Required Port mappings
 
 Conditions:
   IamPolicyEmpty: !Equals [!Ref IamPolicyDocument, '{}']
 
-Resources:  
+Resources:
   IAMRole:
     Type: 'AWS::IAM::Role'
     Properties:
@@ -157,7 +157,7 @@ Resources:
           Value: EC2 workspace instance
         - Key: cost_resource
           Value: !Sub ${AWS::StackName}
-  
+
   InstanceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -184,6 +184,6 @@ Outputs:
   InstancePrivateIPAddress:
     Description: Private IP address of the newly created EC2 instance
     Value: !GetAtt [EC2Instance, PrivateIp]
-  AvailabilityZone: 
+  AvailabilityZone:
     Description: AvailabilityZone of newly created EC2 instance
     Value: !GetAtt [EC2Instance, AvailabilityZone]
