@@ -37,6 +37,9 @@ Parameters:
   KeyPair:
     Type: "AWS::EC2::KeyPair::KeyName"
     Description: Name of an existing EC2 KeyPair to enable SSH access to the instance. If no key pairs exist, please create one from the button next to the dropdown. Please contact your Administrator if you are unable to create one.
+  AvailabilityZone:
+    Description: Select the availability zone in which to create the instance. If you plan to attach a secondary volume to the instance, create this instance in the same AvailabilityZone as the volume you created.
+    Type: AWS::EC2::AvailabilityZone::Name   
   
 Conditions:
   IamPolicyEmpty: !Equals [!Ref IamPolicyDocument, '{}']
@@ -56,6 +59,8 @@ Resources:
                 - 'ec2.amazonaws.com'
             Action:
               - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
       Policies:
         - !If
           - IamPolicyEmpty
@@ -120,7 +125,16 @@ Resources:
               group: 'root'
               content: !Sub |
                 #!/usr/bin/env bash
-                instance_id=$(curl -s "http://169.254.169.254/latest/meta-data/instance-id")
+                # Get the session token
+                TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
+                
+                # Get the region to build the parameter name
+                instance_region=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/placement/region)
+                echo "Retrieved region ${region} from metadata service"
+                
+                # Get the instance id to build the parameter name
+                instance_id=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-id)
+
                 secret=`uuidgen`
                 echo "setting ${InitialUser} password and starting rstudio"
                 password=$(echo -n "$instance_id$secret" | sha256sum | awk '{print $1}')
@@ -129,7 +143,7 @@ Resources:
                                              
                 sleep 10
                 public_key=$(curl http://localhost:8787/auth-public-key)
-                instance_region=$(curl -s "http://169.254.169.254/latest/meta-data/placement/region")
+
                 aws ssm put-parameter --name "/RL/RG/rstudio/public-key/$instance_id" --value '{"secret":"'$secret'","public_key":"'$public_key'"}' --region $instance_region --type SecureString --overwrite 
                 echo "Stored rstudio public key in SSM"
             '/var/log/rstudio.log':
@@ -150,6 +164,7 @@ Resources:
     Properties:
       ImageId : '{{resolve:ssm:/RL/RG/StandardCatalog/RStudio}}'
       InstanceType: !Ref 'InstanceType'
+      AvailabilityZone: !Ref AvailabilityZone
       SecurityGroups: [!Ref 'RstudioEC2SecurityGroup']
       KeyName: !Ref 'KeyPair'
       IamInstanceProfile: !Ref InstanceProfile
@@ -206,4 +221,4 @@ Outputs:
     Value: '443'
   AvailabilityZone: 
     Description: AvailabilityZone of newly created Rstudio EC2Instance
-    Value: !GetAtt [RstudioEC2Instance, AvailabilityZone]  
+    Value: !Ref AvailabilityZone

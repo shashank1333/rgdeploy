@@ -18,7 +18,7 @@ services:
       - sp2net
 
   cc-3102:
-    image: 045938549113.dkr.ecr.us-east-2.amazonaws.com/researchportal:_fd_1.21.2_b2433
+    image: relevancelab/researchportal:_fd_1.22.0_b2690
     secrets:
       - source: sp2prod-config.json
         target: /rlc/cc/server/app/config/config.json
@@ -42,7 +42,7 @@ services:
     
     
   scheduler-3102:
-    image: 045938549113.dkr.ecr.us-east-2.amazonaws.com/researchportal:_fd_1.21.2_b2433
+    image: relevancelab/researchportal:_fd_1.22.0_b2690
     secrets:
       - source: sp2prod-config.json
         target: /rlc/cc/server/app/config/config.json
@@ -62,7 +62,7 @@ services:
     command: ["./app/scheduler/app.js"]
 
   notificationsink:
-    image: 045938549113.dkr.ecr.us-east-2.amazonaws.com/notificationsink:1.19.0_b2
+    image: relevancelab/aws-notificationsink:1.22.0_b1
     secrets:
       - source: sp2prod-config.json
         target: /opt/app/config/config.json

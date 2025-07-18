@@ -12,3 +12,5 @@ sudo echo -e "RG_HOME='/opt/deploy/sp2'\n" >> sudo /etc/environment
 cd ${RG_SRC}
 sudo tar -czf config.tar.gz config
 sudo zip dump.zip dump/*
+sudo docker swarm leave --force
+sudo docker swarm init --default-addr-pool 172.20.0.0/16

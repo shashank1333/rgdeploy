@@ -348,7 +348,10 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
-                  - logs:*
+                  - logs:CreateLogDelivery
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:DeleteLogGroup
                 Resource: arn:aws:logs:*:*:*
   LambdaFunction1:
     Type: "AWS::Lambda::Function"

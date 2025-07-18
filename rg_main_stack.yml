@@ -118,26 +118,35 @@ Resources:
       PolicyDocument:
         Version: "2012-10-17"
         Statement:
-          - Effect: Allow
+          - Sid: "InstancePermissions"
+            Effect: Allow
             Action:
               - ec2:DescribeImages
               - ec2:CopyImage
               - ec2:ModifyImageAttribute
-              - ec2:ModifyInstanceMetadataOptions
               - ec2:CreateNetworkInterface
-              - iam:attachRolePolicy
-              - iam:createPolicy
-              - iam:createPolicyVersion
-              - iam:createRole
-              - iam:deletePolicy
-              - iam:deletePolicyVersion
-              - iam:detachRolePolicy
-              - iam:updateAssumeRolePolicy
               - elasticloadbalancing:RegisterTargets
-              - ses:*
-              - sns:*
               - sts:AssumeRole
+              - kms:Decrypt
             Resource: "*"
+          - Sid: "RoleRelatedPermissions"
+            Effect: Allow
+            Action:
+              - iam:AttachRolePolicy
+              - iam:CreateRole
+              - iam:DetachRolePolicy
+            Resource: 
+              - !Sub "arn:aws:iam::${AWS::AccountId}:role/${BaseAccountPolicyName}"
+          - Sid: "PolicyRelatedPermissions"
+            Effect: Allow
+            Action:
+              - iam:CreatePolicy
+              - iam:CreatePolicyVersion
+              - iam:DeletePolicy
+              - iam:DeletePolicyVersion
+              - iam:UpdateAssumeRolePolicy
+            Resource: 
+              - "arn:aws:iam::*:policy/RG-Cross-Account-Policy*"
   RGPortalSG:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -150,10 +159,27 @@ Resources:
           ToPort: "80"
           CidrIp:
             Ref: AccessFromCidr
+        - IpProtocol: tcp
+          FromPort: "443"
+          ToPort: "443"            
+          CidrIp:
+            Ref: AccessFromCidr
+      SecurityGroupEgress:  # Adding egress rule
+        - IpProtocol: "-1"  # Allow all protocols
+          CidrIp: 0.0.0.0/0  # Allow all outbound traffic to all destinations             
       Tags:
         - Key: Name
           Value:
             Fn::Sub: ${AWS::StackName}-SecurityGroup
+  IMDSv2LaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
+    Properties:
+        LaunchTemplateName: IMDSV2
+        LaunchTemplateData:
+          DisableApiTermination: true
+          MetadataOptions: 
+            HttpTokens: required
+            HttpPutResponseHopLimit: 2
   RGEC2Instance:
     Type: AWS::EC2::Instance
     Properties:

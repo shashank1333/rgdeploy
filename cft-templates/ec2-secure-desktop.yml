@@ -59,9 +59,20 @@ Resources:
       PolicyDocument:
         Version: "2012-10-17"
         Statement:
-          - Effect: Allow
+          - Sid: AllowSSMParamActions
+            Effect: Allow
             Action:
-              - ssm:*
+              - ssm:GetParameter
+              - ssm:PutParameter
+              - ssm:DescribeParameters
+            Resource: "*"
+          - Sid: AllowAccessToEncryptionKeys
+            Effect: Allow
+            Action:
+              - kms:Decrypt
+              - kms:Encrypt
+              - kms:GenerateDataKey
+              - kms:DescribeKey
             Resource: "*"
   InstanceRolePermissionBoundary:
     Type: AWS::IAM::ManagedPolicy
@@ -300,9 +311,18 @@ Resources:
               group: "ec2-user"
               content: !Sub |
                 #!/bin/bash
-                # trap '/opt/aws/bin/cfn-signal --exit-code 1 --resource EC2Instance --region ${AWS::Region} --stack ${AWS::StackName}' ERR
-                region=$(curl -s "http://169.254.169.254/latest/meta-data/placement/region")
-                instance_id=$(curl -s "http://169.254.169.254/latest/meta-data/instance-id")
+                trap "Error setting user token. You may not be able to access your instance URL"  ERR
+                # Get the session token
+                TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
+                
+                # Get the region to build the parameter name
+                region=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/placement/region)
+                echo "Retrieved region ${region} from metadata service"
+                
+                # Get the instance id to build the parameter name
+                instance_id=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-id)
+                echo "Retrieved instance_id $instance_id from metadata service"
+                
                 session_id="rg-session"
                 auth_token=`uuidgen`
                 parameter_name="/RL/RG/secure-desktop/auth-token/$instance_id"
@@ -382,6 +402,9 @@ Resources:
               cwd: "/home/ec2-user" 
               command: "/home/ec2-user/start_jupyter.sh" 
     Properties:
+      LaunchTemplate:
+        LaunchTemplateName: "RG-IMDSv2"
+        Version: 1    
       UserData:
         Fn::Base64: !Sub |
           #!/usr/bin/env bash
@@ -454,7 +477,7 @@ Resources:
             
       
       BlockDeviceMappings:
-        - DeviceName: /dev/xvda
+        - DeviceName: /dev/sda1
           Ebs:
             VolumeSize: !Ref EBSVolumeSize
             Encrypted: true    
@@ -469,11 +492,13 @@ Resources:
       PropagateTagsToVolumeOnCreation: true
       Tags:
         - Key: Name
-          Value: !Join ["-", [Ref: Namespace, "ec2-linux"]]
+          Value: !Join ["-", [Ref: Namespace, "ec2-secure-linux"]]
         - Key: Description
           Value: EC2 workspace instance
         - Key: cost_resource
           Value: !Sub ${AWS::StackName}
+        - Key: PatchGroup
+          Value: RG-PatchGroup-Linux          
 
   InstanceSecurityGroup:
     Type: AWS::EC2::SecurityGroup

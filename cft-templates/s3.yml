@@ -16,10 +16,17 @@ Parameters:
     AllowedValues:
       - aws:kms
       - AES256
-
+  AccessLoggingBucketName:
+    Type: String
+    Description: "Pass the bucket name where Access Logs for this S3 bucket should be sent"
+    
 Conditions:
   AES256: !Equals [!Ref SSEAlgorithm, "AES256"]   
-
+  AccessLoggingEnabled:
+    Fn::Not:
+      - Fn::Equals:
+          - Ref: AccessLoggingBucketName
+          - ""
 Resources:
   SampleBucket:
     Type: AWS::S3::Bucket
@@ -41,6 +48,40 @@ Resources:
           Value: !Sub ${AWS::StackName}
         - Key: Name
           Value: !Sub ${Namespace} 
+      LoggingConfiguration:
+        Fn::If:
+          - AccessLoggingEnabled
+          - DestinationBucketName: !Ref AccessLoggingBucketName
+            LogFilePrefix: !Ref Namespace
+          - !Ref "AWS::NoValue"
+
+BucketPolicy:
+  Type: "AWS::S3::BucketPolicy"
+  Properties:
+    Bucket: !Ref SampleBucket      
+    PolicyDocument:
+      Version: "2012-10-17"
+      Statement:
+        - Sid: EnforceTLS12
+          Effect: Deny
+          Principal: "*"
+          Action: "s3:*"
+          Resource:
+            - !Sub "${SampleBucket.Arn}"
+            - !Sub "${SampleBucket.Arn}/*"
+          Condition:
+            Bool:
+              "aws:SecureTransport": "false"
+        - Sid: EnforceTLS12OrHigher
+          Effect: Deny
+          Principal: "*"
+          Action: "s3:*"
+          Resource:
+            - !Sub "${SampleBucket.Arn}"
+            - !Sub "${SampleBucket.Arn}/*"
+          Condition:
+            NumericLessThan:
+              "s3:TLSVersion": "1.2"
 
 Outputs:
   BucketArn:

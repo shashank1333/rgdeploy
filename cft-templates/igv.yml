@@ -104,7 +104,8 @@ Resources:
           - PolicyName: !Join ['-', [Ref: Namespace, 's3-studydata-policy']]
             PolicyDocument: !Ref IamPolicyDocument
       ManagedPolicyArns:
-        - Ref: SSMPolicy            
+        - Ref: SSMPolicy
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
 
   InstanceProfile:
     Type: 'AWS::IAM::InstanceProfile'
@@ -183,8 +184,16 @@ Resources:
               content: !Sub |
                 #!/bin/bash
                 # trap '/opt/aws/bin/cfn-signal --exit-code 1 --resource EC2Instance --region ${AWS::Region} --stack ${AWS::StackName}' ERR
-                region=$(curl -s "http://169.254.169.254/latest/meta-data/placement/region")
-                instance_id=$(curl -s "http://169.254.169.254/latest/meta-data/instance-id")
+                # Get the session token
+                TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
+                
+                # Get the region to build the parameter name
+                region=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/placement/region)
+                echo "Retrieved region ${region} from metadata service"
+                
+                # Get the instance id to build the parameter name
+                instance_id=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-id)
+
                 session_id="rg-session"
                 auth_token=`uuidgen`
                 parameter_name="/RL/RG/igv-viewer/auth-token/$instance_id"

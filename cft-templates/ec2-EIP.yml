@@ -45,6 +45,9 @@ Parameters:
   LatestAmiId:
     Type:  'AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>'
     Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2'
+  AvailabilityZone:
+    Description: Select the availability zone in which to create the instance. If you plan to attach a secondary volume to the instance, create this instance in the same AvailabilityZone as the volume you created.
+    Type: AWS::EC2::AvailabilityZone::Name    
 
 Conditions:
   IamPolicyEmpty: !Equals [!Ref IamPolicyDocument, '{}']
@@ -64,6 +67,8 @@ Resources:
                 - 'ec2.amazonaws.com'
             Action:
               - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
       Policies:
         - !If
           - IamPolicyEmpty
@@ -94,6 +99,7 @@ Resources:
           # Signal result to CloudFormation
           /opt/aws/bin/cfn-signal -e $? --stack "${AWS::StackName}" --resource "EC2Instance" --region "${AWS::Region}"
       InstanceType: !Ref 'InstanceType'
+      AvailabilityZone: !Ref AvailabilityZone
       SecurityGroups: [!Ref 'InstanceSecurityGroup']
       KeyName: !Ref 'KeyPair'
       ImageId: !Ref 'LatestAmiId'
@@ -134,4 +140,4 @@ Outputs:
     Value: !GetAtt [EC2Instance, PublicDnsName]
   AvailabilityZone: 
     Description: AvailabilityZone of newly created EC2 instance
-    Value: !GetAtt [EC2Instance, AvailabilityZone]  
+    Value: !Ref AvailabilityZone

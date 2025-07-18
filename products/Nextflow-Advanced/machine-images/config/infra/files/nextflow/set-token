@@ -10,9 +10,15 @@ sudo java -cp /usr/local/bin/h2/bin/h2-*.jar org.h2.tools.RunScript -url "jdbc:h
 # Remove the temp update user sql script
 sudo rm /usr/local/bin/update-user-temp.sql
 echo "Auth token updated in db"
+# Get the token to use IMDSv2
+TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
+# Get the instance id to build the parameter name
+instance_id=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-id)
+echo "Retrieved instance_id ${instance_id} from metadata service"
+# Get the region to build the parameter name
+instance_region=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/placement/region)
+echo "Retrieved region ${region} from metadata service"
 
 #Update SSM parameter with the auth token
-instance_id=$(curl -s "http://169.254.169.254/latest/meta-data/instance-id")
-instance_region=$(curl -s "http://169.254.169.254/latest/meta-data/placement/region")
 aws ssm put-parameter --name "/nextflow-tower/auth-token/sc-environments/ec2-instance/${instance_id}" --value $AUTH_TOKEN --region $instance_region --type SecureString --overwrite 
 echo "Stored nextflow tower auth token in SSM"

@@ -20,7 +20,9 @@ fi
 
 systemctl disable mongod
 service mongod stop
-myip=$(wget -q -O - http://169.254.169.254/latest/meta-data/local-ipv4)
+# Fetch IMDSv2 session token
+TOKEN=$(wget --method=PUT --header="X-aws-ec2-metadata-token-ttl-seconds: 21600" -qO- http://169.254.169.254/latest/api/token)
+myip=$(wget --header="X-aws-ec2-metadata-token: $TOKEN" -qO- http://169.254.169.254/latest/meta-data/local-ipv4)
 echo "Private IP of this machine is $myip"
 mydocdburl=$1
 mydbname=$2

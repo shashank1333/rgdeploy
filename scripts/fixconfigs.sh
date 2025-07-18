@@ -10,12 +10,20 @@ echo "RG_SRC=$RG_SRC"
 echo "RG_ENV=$RG_ENV"
 [ -z "$S3_SOURCE" ] && S3_SOURCE=rg-deployment-docs
 echo "S3_SOURCE=$S3_SOURCE"
+# Get the session token
+TOKEN=$(wget --method=PUT --header="X-aws-ec2-metadata-token-ttl-seconds: 21600" -qO- http://169.254.169.254/latest/api/token)
 
-role_name="$(wget -q -O - http://169.254.169.254/latest/meta-data/iam/security-credentials/)"
+# Get the region to build the parameter name
+instance_region=$(wget --header="X-aws-ec2-metadata-token: $TOKEN" -qO- http://169.254.169.254/latest/meta-data/placement/region)
+echo "Retrieved region ${instance_region} from metadata service"
+
+role_name="$(wget --header="X-aws-ec2-metadata-token: $TOKEN" -qO- http://169.254.169.254/latest/meta-data/iam/security-credentials/)"
 echo "Role name : $role_name"
-ac_name=$(wget -q -O - http://169.254.169.254/latest/dynamic/instance-identity/document | jq -r .accountId)
+# Use the token to get instance identity document
+ac_name=$(wget --header="X-aws-ec2-metadata-token: $TOKEN" -qO- http://169.254.169.254/latest/dynamic/instance-identity/document | jq -r .accountId)
 echo "Account number : $ac_name"
-instanceid=$(wget -q -O - http://169.254.169.254/latest/meta-data/instance-id)
+# Get the instance id to build the parameter name
+instanceid=$(wget --header="X-aws-ec2-metadata-token: $TOKEN" -qO- http://169.254.169.254/latest/meta-data/instance-id)
 echo "Instance-id : $instanceid"
 
 if ! [ -d "$RG_HOME/tmp" ]; then

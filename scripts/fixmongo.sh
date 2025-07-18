@@ -27,7 +27,9 @@ echo "S3_SOURCE=$S3_SOURCE"
 # First check if the IP at which mongod is listening is correct
 mymongoip=$(sed -n -e 's/bindIp: \([^,]*\).*/\1/p' /etc/mongod.conf | sed -e 's/\s*//')
 echo "Mongod configured to listen at $mymongoip"
-myip=$(wget -q -O - http://169.254.169.254/latest/meta-data/local-ipv4)
+# Fetch IMDSv2 session token
+TOKEN=$(wget --method=PUT --header="X-aws-ec2-metadata-token-ttl-seconds: 21600" -qO- http://169.254.169.254/latest/api/token)
+myip=$(wget --header="X-aws-ec2-metadata-token: $TOKEN" -qO- http://169.254.169.254/latest/meta-data/local-ipv4)
 echo "Private IP of this machine is $myip"
 if [ "$mymongoip" != "$myip" ]; then
 	echo "Mongo is listening on a different IP $mymongoip than the private ip of the machine $myip"
@@ -36,7 +38,7 @@ fi
 
 myurl=$5
 if [ -z "$myurl" ]; then
-	public_host_name="$(wget -q -O - http://169.254.169.254/latest/meta-data/public-hostname)"
+	public_host_name="$(wget --header="X-aws-ec2-metadata-token: $TOKEN" -qO- http://169.254.169.254/latest/meta-data/public-hostname)"
 	baseurl="http://$public_host_name/"
 else
 	baseurl="$myurl/"
@@ -101,7 +103,7 @@ mongodbkey="${RG_HOME}/config/mongodb.key"
 mongodbcsr="${RG_HOME}/config/mongodb.csr"
 mongodbcrt="${RG_HOME}/config/mongodb.crt"
 echo "Creating mongodb.pem file"
-host_name="$(wget -q -O - http://169.254.169.254/latest/meta-data/local-hostname | sed -e 's/\..*//')"
+host_name="$(wget --header="X-aws-ec2-metadata-token: $TOKEN" -qO- http://169.254.169.254/latest/meta-data/local-hostname | sed -e 's/\..*//')"
 openssl genrsa -out "$rootca" 2048
 openssl req -x509 -new -nodes -key "$rootca" -sha256 -days 1024 -out "$rlca" -subj "/CN=."
 openssl genrsa -out "$mongodbkey" 2048

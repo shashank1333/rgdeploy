@@ -33,5 +33,15 @@ if [ -z "$mydocdburl" ]; then
 	exit 1
 fi
 
-mongo --ssl --host "$mydocdburl:27017" --sslCAFile "$RG_HOME/config/rds-combined-ca-bundle.pem" \
-	--username "$mydbuser" --password "$mydbuserpwd"
+if command -v mongosh >/dev/null 2>&1; then
+	echo "Using mongosh to connect..."
+	mongosh --ssl --host "$mydocdburl:27017" --sslCAFile "$RG_HOME/config/rds-combined-ca-bundle.pem" \
+		--username "$mydbuser" --password "$mydbuserpwd"
+elif command -v mongo >/dev/null 2>&1; then
+	echo "Using mongo to connect..."
+	mongo --ssl --host "$mydocdburl:27017" --sslCAFile "$RG_HOME/config/rds-combined-ca-bundle.pem" \
+		--username "$mydbuser" --password "$mydbuserpwd"
+else
+	echo "Error: Neither mongosh nor mongo is installed. Please install one of them to proceed."
+	exit 1
+fi

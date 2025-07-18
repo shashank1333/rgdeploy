@@ -37,6 +37,9 @@ Parameters:
   KeyPair:
     Type: "AWS::EC2::KeyPair::KeyName"
     Description: Name of an existing EC2 KeyPair to enable SSH access to the instance. If no key pairs exist, please create one from the button next to the dropdown. Please contact your Administrator if you are unable to create one.
+  AvailabilityZone:
+    Description: Select the availability zone in which to create the instance. If you plan to attach a secondary volume to the instance, create this instance in the same AvailabilityZone as the volume you created.
+    Type: AWS::EC2::AvailabilityZone::Name    
   
 Conditions:
   IamPolicyEmpty: !Equals [!Ref IamPolicyDocument, '{}']
@@ -56,6 +59,8 @@ Resources:
                 - 'ec2.amazonaws.com'
             Action:
               - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
       Policies:
         - !If
           - IamPolicyEmpty
@@ -160,8 +165,17 @@ Resources:
                 echo "fetching token and starting jupyterlab"
                 `docker-compose up -d`                           
                 sleep 5
-                instance_id=$(curl -s "http://169.254.169.254/latest/meta-data/instance-id")
-                instance_region=$(curl -s "http://169.254.169.254/latest/meta-data/placement/region")
+                # Get the session token
+                TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
+                
+                # Get the region to build the parameter name
+                instance_region=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/placement/region)
+                echo "Retrieved region ${region} from metadata service"
+                
+                # Get the instance id to build the parameter name
+                instance_id=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-id)
+                echo "Retrieved instance_id $instance_id from metadata service"
+
                 #access_token=$((docker exec jupyterlab  /bin/bash -c "jupyter server list" | grep token | awk '{print $1}') | sed 's/.*=//')
                 #echo "$access_token"
                 docker exec jupyterlab /bin/bash -c "jupyter server list" > access_token.txt 2>&1
@@ -198,6 +212,7 @@ Resources:
       KeyName: !Ref 'KeyPair'
       IamInstanceProfile: !Ref InstanceProfile
       PropagateTagsToVolumeOnCreation: true
+      AvailabilityZone: !Ref AvailabilityZone
       BlockDeviceMappings:
         - DeviceName: /dev/xvda
           Ebs:
@@ -269,4 +284,4 @@ Outputs:
     Value: '443'
   AvailabilityZone: 
     Description: AvailabilityZone of newly created JupyterLab EC2Instance
-    Value: !GetAtt [EC2Instance, AvailabilityZone]  
+    Value: !Ref AvailabilityZone

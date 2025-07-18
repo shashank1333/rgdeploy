@@ -39,7 +39,12 @@ if [ -z $emailid ]; then
     echo "Email id is required. Cannot create user. Exiting"
     exit 1
 fi
-instanceid=$(wget -q -O - http://169.254.169.254/latest/meta-data/instance-id)
+# Get the token to use IMDSv2
+TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
+
+# Get the instance id to build the parameter name
+instanceid=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-id)
+echo "Retrieved instance_id ${instanceid} from metadata service"
 data="{\"username\":\"rgadmin\",\"first_name\":\"$firstname\",\"last_name\":\"$lastname\",\"email\":\"$emailid\",\"password\":\"RgAdmin@$instanceid\",\"level\":2}"
 #echo $data | jq -r
 

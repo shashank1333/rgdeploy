@@ -76,6 +76,9 @@ Resources:
            CidrIp: !Ref AccessFromCidr
            FromPort: 27017
            ToPort: 27017
+      SecurityGroupEgress:  # Adding egress rule
+        - IpProtocol: "-1"  # Allow all protocols
+          CidrIp: 0.0.0.0/0  # Allow all outbound traffic to all destinations 
       Tags:
         - Key: Name
           Value: !Ref SecurityGroupName
@@ -90,6 +93,9 @@ Resources:
            FromPort: "0"
            ToPort: "65535"
            CidrIp : "0.0.0.0/0"
+      SecurityGroupEgress:  # Adding egress rule
+        - IpProtocol: "-1"  # Allow all protocols
+          CidrIp: 0.0.0.0/0  # Allow all outbound traffic to all destinations 
       Tags:
         - Key: Name
           Value: !Ref VpceSecurityGroupName        

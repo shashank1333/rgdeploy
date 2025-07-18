@@ -53,7 +53,8 @@ while getopts "htf:" options; do
 done
 
 if [ -z "$TEST" ]; then
-	instanceid=$(wget -q -O - http://169.254.169.254/latest/meta-data/instance-id)
+    TOKEN=$(wget --method=PUT --header="X-aws-ec2-metadata-token-ttl-seconds: 21600" -qO- http://169.254.169.254/latest/api/token)
+	instanceid=$(wget --header="X-aws-ec2-metadata-token: $TOKEN" -qO- http://169.254.169.254/latest/meta-data/instance-id)
 else
 	instanceid='i-1234509876'
 fi

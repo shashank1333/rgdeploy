@@ -20,7 +20,10 @@ Parameters:
   EBSVolumeSize:
     Description: The initial size of the volume (in GBs), Select volume size must be 32 or above.
     Type: Number
-    Default: 32    
+    Default: 32 
+  AvailabilityZone:
+    Description: Select the availability zone in which to create the instance. If you plan to attach a secondary volume to the instance, create this instance in the same AvailabilityZone as the volume you created.
+    Type: AWS::EC2::AvailabilityZone::Name       
   InstanceType:
     Type: String
     Description: Choose the instance type e.g t3.medium (2vCPU , 2GiB RAM), t3.large (2vCPU, 8GiB RAM), t3.xlarge(4vCPU, 16GiB RAM)
@@ -56,6 +59,8 @@ Resources:
                 - 'ec2.amazonaws.com'
             Action:
               - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
       Policies:
         - !If
           - IamPolicyEmpty
@@ -163,8 +168,16 @@ Resources:
                 access_token=`uuidgen`             
                 `PASSWORD=$access_token docker-compose up -d`
                 sleep 5
-                instance_id=$(curl -s "http://169.254.169.254/latest/meta-data/instance-id")
-                instance_region=$(curl -s "http://169.254.169.254/latest/meta-data/placement/region")               
+                # Get the session token
+                TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
+                
+                # Get the region to build the parameter name
+                instance_region=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/placement/region)
+                echo "Retrieved region ${region} from metadata service"
+                
+                # Get the instance id to build the parameter name
+                instance_id=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-id)
+                echo "Retrieved instance_id $instance_id from metadata service"
                 aws ssm put-parameter --name "/RL/RG/vs-code/auth-token/$instance_id" --value $access_token --region $instance_region --type SecureString --overwrite 
                 echo "Stored vscode token in SSM"
             '/var/log/vscode.log':
@@ -185,6 +198,7 @@ Resources:
     Properties:
       ImageId : '{{resolve:ssm:/RL/RG/StandardCatalog/VS-Code}}'
       InstanceType: !Ref 'InstanceType'
+      AvailabilityZone: !Ref AvailabilityZone
       BlockDeviceMappings:
         - DeviceName: /dev/xvda
           Ebs:
@@ -267,4 +281,4 @@ Outputs:
     Value: '443'
   AvailabilityZone: 
     Description: AvailabilityZone of newly created VS-Code EC2Instance
-    Value: !GetAtt [EC2Instance, AvailabilityZone]  
+    Value: !Ref AvailabilityZone
