@@ -1,4 +1,4 @@
-Metadata: 
+Metadata:
   License: Apache-2.0
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'AWS CloudFormation Template to create an GPU based EC2 instance with NICE DCV pre installed.'
@@ -27,14 +27,13 @@ Parameters:
       [
         t3.medium,
         t3.large,
-        t3.xlarge,
-        
+        t3.xlarge
       ]
     ConstraintDescription: must be a valid EC2 instance type.
   EBSVolumeSize:
     Description: The initial size of the volume (in GBs)  EBS will use for storage.
     Type: Number
-    Default: 32  
+    Default: 32
   KeyPair:
     Description: Name of an existing EC2 KeyPair to enable SSH access to the instance. If no key pairs exist, please create one from the button next to the dropdown. Please contact your Administrator if you are unable to create one.
     Type: AWS::EC2::KeyPair::KeyName
@@ -49,12 +48,12 @@ Parameters:
     ConstraintDescription: must be a valid IP CIDR range of the form x.x.x.x/x.
   AvailabilityZone:
     Description: Select the availability zone in which to create the instance. If you plan to attach a secondary volume to the instance, create this instance in the same AvailabilityZone as the volume you created.
-    Type: AWS::EC2::AvailabilityZone::Name    
+    Type: AWS::EC2::AvailabilityZone::Name
 
 Conditions:
   IamPolicyEmpty: !Equals [!Ref IamPolicyDocument, '{}']
 
-Resources:  
+Resources:
   SSMPolicy:
     Type: AWS::IAM::ManagedPolicy
     Properties:
@@ -134,7 +133,7 @@ Resources:
               content: |
                 [Desktop Entry]
                 Type=Application
-                Exec="/home/ec2-user/jupyter.sh"
+                Exec="/home/ec2-user/Jupyter.sh"
                 Hidden=false
                 NoDisplay=false
                 X-GNOME-Autostart-enabled=true
@@ -154,9 +153,9 @@ Resources:
                 X-GNOME-Autostart-enabled=true
                 Terminal=true
                 Name=rstudio-server
-                Comment=Icon for rstudio              
-            
-              
+                Comment=Icon for rstudio
+
+
             "/home/ec2-user/rstudio.sh":
               mode: "000755"
               owner: "ec2-user"
@@ -175,19 +174,19 @@ Resources:
                 URL=$url
                 Icon=$custom_icon
                 EOL
-                chmod +x "$desktop_file"   
+                chmod +x "$desktop_file"
             "/home/ec2-user/Jupyter.sh":
               mode: "000755"
               owner: "ec2-user"
               group: "ec2-user"
               content: !Sub |
                 #!/bin/bash
-                
+
                 sleep 2
                 jtoken=$(docker exec jupyterlab /bin/bash -c "jupyter server list" 2>&1 | grep token | awk '{print $2}' | sed 's/.*=//')
 
                 if [ -n "$jtoken" ]; then
- 
+
                     echo "Token value: $jtoken"
                 else
                     echo "Error: Unable to retrieve the Jupyter token."
@@ -204,7 +203,7 @@ Resources:
                 URL=$url
                 Icon=$custom_icon
                 EOL
-                chmod +x "$desktop_file"     
+                chmod +x "$desktop_file"
             "/home/ec2-user/mount_study.sh":
               mode: "000755"
               owner: "ec2-user"
@@ -221,15 +220,15 @@ Resources:
               group: "ec2-user"
               content: !Sub |
                 #!/bin/bash
-                # trap '/opt/aws/bin/cfn-signal --exit-code 1 --resource EC2Instance --region ${AWS::Region} --stack ${AWS::StackName}' ERR
+                trap '/opt/aws/bin/cfn-signal --exit-code 1 --resource EC2Instance --region ${AWS::Region} --stack ${AWS::StackName}' ERR
 
                 # Get the session token
                 TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
-                
+
                 # Get the region to build the parameter name
-                region=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/placement/region)
-                echo "Retrieved region ${region} from metadata service"
-                
+                instance_region=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/placement/region)
+                echo "Retrieved region ${instance_region} from metadata service"
+
                 # Get the instance id to build the parameter name
                 instance_id=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-id)
                 echo "Retrieved instance_id $instance_id from metadata service"
@@ -305,7 +304,7 @@ Resources:
             02_set_user_token:
               cwd: "/home/ec2-user"
               command: "/home/ec2-user/set_user_token.sh"
-                                       
+
     Properties:
       UserData:
         Fn::Base64: !Sub |
@@ -315,14 +314,14 @@ Resources:
           # Download and execute bootstrap script
           aws s3 cp --region "${AWS::Region}" "${EnvironmentInstanceFiles}/get_bootstrap.sh" "/tmp"
           chmod 500 "/tmp/get_bootstrap.sh"
-          /tmp/get_bootstrap.sh "${EnvironmentInstanceFiles}" '${S3Mounts}' "${AWS::Region}"  
+          /tmp/get_bootstrap.sh "${EnvironmentInstanceFiles}" '${S3Mounts}' "${AWS::Region}"
 
           # Install supervisor and start on boot
           pip3 install supervisor crudini
 
           # Route auth request to external authenticator and restart dcv
           /usr/local/bin/crudini --set /etc/dcv/dcv.conf security auth-token-verifier \"http://127.0.0.1:8445\"
-          #/usr/local/bin/crudini --set /etc/dcv/dcv.conf clipboard primary-selection-copy false 
+          #/usr/local/bin/crudini --set /etc/dcv/dcv.conf clipboard primary-selection-copy false
           systemctl restart dcvserver
 
           # Create dcv session start script
@@ -362,7 +361,7 @@ Resources:
           # # Download and execute bootstrap script
           # aws s3 cp --region "${AWS::Region}" "${EnvironmentInstanceFiles}/get_bootstrap.sh" "/tmp"
           # chmod 500 "/tmp/get_bootstrap.sh"
-          # /tmp/get_bootstrap.sh "${EnvironmentInstanceFiles}" '${S3Mounts}' "${AWS::Region}"          
+          # /tmp/get_bootstrap.sh "${EnvironmentInstanceFiles}" '${S3Mounts}' "${AWS::Region}"
 
           sleep 5
           docker run -d --restart always -e PASSWORD=Pass@123 -v /home/ec2-user:/home/ec2-user -p 8787:8787 relevancelab/rstudio_4.2.1:1.0.3
@@ -406,8 +405,8 @@ Resources:
           Ebs:
             VolumeSize: !Ref EBSVolumeSize
             Encrypted: true
-            
-      
+
+
 
       PropagateTagsToVolumeOnCreation: true
       Tags:
@@ -417,7 +416,7 @@ Resources:
           Value: EC2 workspace instance
         - Key: cost_resource
           Value: !Sub ${AWS::StackName}
-    
+
   InstanceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -445,6 +444,6 @@ Outputs:
   ApplicationPort:
     Description: The Port in which the application is running
     Value: '8443'
-  AvailabilityZone: 
+  AvailabilityZone:
     Description: AvailabilityZone of newly created EC2 instance
     Value: !Ref AvailabilityZone
