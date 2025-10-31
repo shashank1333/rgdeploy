@@ -68,141 +68,151 @@
     ]
   },
   "aws-pcs": {
-      "actions": {
-          "running": {
-              "connect": [
-                  {
-                      "menu": "SSH Terminal",
-                      "imageUrl": "../../assets/images/technology@2x.png",
-                      "outputsRequired": ["ClusterId"]
-                  },
-                  {
-                      "menu": "Submit Job",
-                      "imageUrl": "../../assets/images/technology@2x.png",
-                      "outputsRequired": ["ClusterId"]
-                  }
-              ],
-              "action": [
-              ]
+    "actions": {
+      "running": {
+        "connect": [
+          {
+            "menu": "SSH Terminal",
+            "imageUrl": "../../assets/images/technology@2x.png",
+            "outputsRequired": [
+              "ClusterId"
+            ]
           },
-          "stopped": {
-              "connect": [],
-              "action": [
-                  {
-                      "action": "Start",
-                      "imageUrl": "../../assets/images/play@2x.png",
-                      "outputsRequired": []
-                  }
-              ]
-          },
-          "default": {
-              "connect": [
-                  {
-                      "menu": "SSH Terminal",
-                      "imageUrl": "../../assets/images/technology@2x.png",
-                      "outputsRequired": []
-                  },
-                  {
-                      "menu": "Remote Desktop",
-                      "imageUrl": "../../assets/images/Screen-icon.png",
-                      "outputsRequired": []
-                  }
-              ],
-              "action": [
-                  {
-                      "action": "Stop",
-                      "imageUrl": "../../assets/images/no-stopping@2x.png",
-                      "outputsRequired": []
-                  },
-                  {
-                      "action": "Reboot",
-                      "imageUrl": "../../assets/images/reset@2x.png",
-                      "outputsRequired": []
-                  }
-              ]
+          {
+            "menu": "Submit Job",
+            "imageUrl": "../../assets/images/technology@2x.png",
+            "outputsRequired": [
+              "ClusterId"
+            ]
           }
+        ],
+        "action": []
       },
-      "transient_states": [
-          "pending",
-          "shutting-down",
-          "stopping",
-          "deleting"
-      ],
-      "active_states": [
-          "running",
-          "active"
-      ],
-      "stopped_states": [
-          "stopped"
-      ],
-      "terminated_states": [
-          "terminated"
-      ]
+      "stopped": {
+        "connect": [],
+        "action": [
+          {
+            "action": "Start",
+            "imageUrl": "../../assets/images/play@2x.png",
+            "outputsRequired": []
+          }
+        ]
+      },
+      "default": {
+        "connect": [
+          {
+            "menu": "SSH Terminal",
+            "imageUrl": "../../assets/images/technology@2x.png",
+            "outputsRequired": []
+          },
+          {
+            "menu": "Remote Desktop",
+            "imageUrl": "../../assets/images/Screen-icon.png",
+            "outputsRequired": []
+          }
+        ],
+        "action": [
+          {
+            "action": "Stop",
+            "imageUrl": "../../assets/images/no-stopping@2x.png",
+            "outputsRequired": []
+          },
+          {
+            "action": "Reboot",
+            "imageUrl": "../../assets/images/reset@2x.png",
+            "outputsRequired": []
+          }
+        ]
+      }
+    },
+    "transient_states": [
+      "pending",
+      "shutting-down",
+      "stopping",
+      "deleting"
+    ],
+    "active_states": [
+      "running",
+      "active"
+    ],
+    "stopped_states": [
+      "stopped"
+    ],
+    "terminated_states": [
+      "terminated"
+    ]
   },
   "ec2-remote-desktop": {
-      "actions": {
-          "running": {
-              "connect": [
-                  {
-                      "menu": "Remote Desktop",
-                      "imageUrl": "../../assets/images/Screen-icon.png"
-                  }
-              ],
-              "action": [
-                  {
-                      "action": "Stop",
-                      "imageUrl": "../../assets/images/no-stopping@2x.png"
-                  },
-                  {
-                      "action": "Reboot",
-                      "imageUrl": "../../assets/images/reset@2x.png"
-                  }
-              ]
-          },
-          "stopped": {
-              "connect": [],
-              "action": [
-                  {
-                      "action": "Start",
-                      "imageUrl": "../../assets/images/play@2x.png"
-                  },
-                  {
-                      "action": "Instance Type",
-                      "imageUrl": "../../assets/images/pencil.png",
-                      "outputsRequired": [
-                          "InstanceId"
-                      ]
-                  }
-              ]
-          },
-          "default": {
-              "connect": [
-                  {
-                      "menu": "Remote Desktop",
-                      "imageUrl": "../../assets/images/Screen-icon.png"
-                  }
-              ],
-              "action": [
-                  {
-                      "action": "Stop",
-                      "imageUrl": "../../assets/images/no-stopping@2x.png"
-                  },
-                  {
-                      "action": "Reboot",
-                      "imageUrl": "../../assets/images/reset@2x.png"
-                  }
-              ]
+    "actions": {
+      "running": {
+        "connect": [
+          {
+            "menu": "Remote Desktop",
+            "imageUrl": "../../assets/images/Screen-icon.png"
           }
+        ],
+        "action": [
+          {
+            "action": "Stop",
+            "imageUrl": "../../assets/images/no-stopping@2x.png"
+          },
+          {
+            "action": "Reboot",
+            "imageUrl": "../../assets/images/reset@2x.png"
+          }
+        ]
       },
-      "transient_states": [
-          "pending",
-          "shutting-down",
-          "stopping",
-          "deleting"
-      ],
-      "active_states": ["running", "active"],
-      "stopped_states": ["stopped"],
-      "terminated_states": ["terminated"]
+      "stopped": {
+        "connect": [],
+        "action": [
+          {
+            "action": "Start",
+            "imageUrl": "../../assets/images/play@2x.png"
+          },
+          {
+            "action": "Instance Type",
+            "imageUrl": "../../assets/images/pencil.png",
+            "outputsRequired": [
+              "InstanceId"
+            ]
+          }
+        ]
+      },
+      "default": {
+        "connect": [
+          {
+            "menu": "Remote Desktop",
+            "imageUrl": "../../assets/images/Screen-icon.png"
+          }
+        ],
+        "action": [
+          {
+            "action": "Stop",
+            "imageUrl": "../../assets/images/no-stopping@2x.png"
+          },
+          {
+            "action": "Reboot",
+            "imageUrl": "../../assets/images/reset@2x.png"
+          }
+        ]
+      }
+    },
+    "transient_states": [
+      "pending",
+      "shutting-down",
+      "stopping",
+      "deleting"
+    ],
+    "active_states": [
+      "running",
+      "active"
+    ],
+    "stopped_states": [
+      "stopped"
+    ],
+    "terminated_states": [
+      "terminated"
+    ]
   },
   "sagemaker": {
     "NotebookInstanceLifecycleConfigName": "Research-Portal-Setup",
