@@ -73,6 +73,7 @@
     "path": "/samllogin",
     "entryPoint": "https://dev-64629994.okta.com/app/dev-64629994_researchgateway_1/exkaoo9k27Z5n8YCc5d7/sso/saml",
     "issuer": "http://www.okta.com/exkaoo9k27Z5n8YCc5d7",
+    "privateSPCert": "/rlc/cc/server/app/config/key.pem",
     "cert": "/rlc/cc/server/app/config/okta.cert",
     "logoutUrl": "https://enterprise-test1.rlcatalyst.com/logout",
     "groupToRoleMapping": {
@@ -109,6 +110,8 @@
   "credentialManagementURL": "http://sp2_cc-3102:3002/authentication",
   "projectSyncURL": "http://sp2_cc-3102:3002/sync-product",
   "researchGatewayAPIToken": "REPLACE_WITH_API_TOKEN",
+  "snsRetryEventTriggerURL": "http://sp2_cc-3102:3002/retrySNSEvent",
+  "projectEventTriggerURL": "http://sp2_cc-3102:3002/project",
   "nsUseSecretsManager": true,
   "thresholdPercentage": 80,
   "PrincipalArn": "RG-Service-Catalog-Role",
