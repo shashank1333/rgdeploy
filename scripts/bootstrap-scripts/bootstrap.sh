@@ -96,15 +96,18 @@ OS_VERSION=`cat /etc/os-release | grep VERSION= | sed 's/VERSION="//' | sed 's/"
 # Apply updates to environments based on environment type
 case "$(env_type)" in
     "ec2-linux") # Add mount script to bash profile
-        yum install -y fuse-2.9.2
+        yum install -y fuse fuse-common
+        modprobe fuse
         printf "\n# Mount S3 study data\nmount_s3.sh\n\n" >> "/home/ec2-user/.bash_profile"
         ;;
     "rstudio") # Add mount script to bash profile
-        yum install -y fuse-2.9.2
+        yum install -y fuse fuse-common
+        modprobe fuse
         printf "\n# Mount S3 study data\nmount_s3.sh\n\n" >> "/home/${RSTUDIO_USER}/.bash_profile"
         ;;
     "nextflow") # Add mount script to bash profile
-        yum install -y fuse-2.9.2
+        yum install -y fuse fuse-common
+        modprobe fuse
         printf "\n# Mount S3 study data\nmount_s3.sh\n\n" >> "/home/ec2-user/.bash_profile"
         ;;
     "sagemaker") # Update config and restart Jupyter
