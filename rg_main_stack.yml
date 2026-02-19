@@ -138,7 +138,7 @@ Resources:
               - iam:CreateRole
               - iam:DetachRolePolicy
             Resource: 
-              - !Sub "arn:aws:iam::${AWS::AccountId}:role/${BaseAccountPolicyName}"
+              - !GetAtt RGPortalRole.Arn
           - Sid: "PolicyRelatedPermissions"
             Effect: Allow
             Action:
