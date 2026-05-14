@@ -68,22 +68,22 @@ Parameters:
   VPC:
     Description: VPC to launch the Cluster nodes
     Type: String
-    Default: vpc-07c351be7a033127f
+    Default: vpc-0e80ca11ecebc561d
 
   DefaultPrivateSubnet:
     Description: Private subnet for the PCluster
     Type: String
-    Default: subnet-01d831eb711ef25ec
+    Default: subnet-005ed22f10a495974
 
   SecurityGroup:
     Description: Security group ID from the network template output
     Type: String
-    Default: sg-00db64cee7ba85cb2
+    Default: sg-08ccbf9fa55387782
 
   DefaultPublicSubnet:
-    Description: Private subnet for the PCluster
+    Description: Public subnet for the PCluster (must route to an Internet Gateway if used)
     Type: String
-    Default: subnet-01d831eb711ef25ec
+    Default: subnet-0f126c0751ec4b3aa
 
   # Parameters for pcs-iip-minimal.yaml
   EnableSsm:
@@ -112,7 +112,7 @@ Parameters:
   VpcDefaultSecurityGroupId:
     Type: AWS::EC2::SecurityGroup::Id
     Description: Cluster VPC 'default' security group. Make sure you choose the one from your cluster VPC!
-    Default: sg-00db64cee7ba85cb2 # Default from main stack's SecurityGroup param
+    Default: sg-08ccbf9fa55387782 # Default from main stack's SecurityGroup param
 
   EfsFilesystemId:
     Type: String
@@ -155,6 +155,20 @@ Parameters:
     Description: Project tag to apply to nested stacks
     Default: "Placeholder"
 
+  IamPolicyDocument:
+    Type: String
+    Description: The IAM policy to be associated with the launched workstation
+
+  S3Mounts:
+    Type: String
+    Description: A JSON array of objects with name, bucket, and prefix properties used to mount data
+
+  EnvironmentInstanceFiles:
+    Type: String
+    Description: >-
+      An S3 URI (starting with "s3://") that specifies the location of files to be copied to
+      the environment instance, including any bootstrap scripts
+
 
 Conditions:
   HasAccountingSupport: !Not [!Or [!Equals [!Ref SlurmVersion, "23.11"], !Equals [!Ref SlurmVersion, "24.05"]]]
@@ -165,6 +179,7 @@ Conditions:
   EnableS3ReadOnlyCondition: !Equals [!Ref EnableS3ReadOnly, "True"]
   EnableCloudwatchAgentCondition: !Equals [!Ref EnableCloudwatchAgent, "True"]
   CreateSshSecGroup: !Equals [!Ref CreateInboundSshSecurityGroup, 'True']
+  IamPolicyEmpty: !Equals [!Ref IamPolicyDocument, '{}']
 
 Mappings:
   Architecture:
@@ -173,10 +188,10 @@ Mappings:
       x86: x86_64
     LoginNodeInstances:
       Graviton: c7g.xlarge
-      x86: g4dn.2xlarge
+      x86: t3.medium
     ComputeNodeInstances:
       Graviton: c7g.xlarge
-      x86: g4dn.2xlarge
+      x86: t3.medium
 
 Resources:
   # Merged from pcs-cluster-sg.yaml
@@ -196,6 +211,10 @@ Resources:
           FromPort: 0
           ToPort: 65535
           CidrIp: 0.0.0.0/0  # Allow all incoming traffic (adjust as needed for security)
+      SecurityGroupEgress:
+        # Allow all outbound traffic so instances can reach AWS services and the internet
+        - IpProtocol: '-1'
+          CidrIp: 0.0.0.0/0
 
   ClusterAllowAllInboundFromSelf:
     Type: AWS::EC2::SecurityGroupIngress
@@ -218,6 +237,7 @@ Resources:
       GroupId: !Ref ClusterSecurityGroup
       IpProtocol: '-1'
       CidrIp: 0.0.0.0/0
+  # (Outbound to world now defined inline in ClusterSecurityGroup.SecurityGroupEgress)
 
   # Attach this to login nodes to enable inbound SSH access.
   InboundSshSecurityGroup:
@@ -266,6 +286,11 @@ Resources:
           - "arn:aws:iam::aws:policy/CloudWatchAgentServerPolicy"
           - !Ref AWS::NoValue
       Policies:
+        - !If
+          - IamPolicyEmpty
+          - !Ref AWS::NoValue
+          - PolicyName: !Sub '${AWS::StackName}-s3-studydata-policy'
+            PolicyDocument: !Ref IamPolicyDocument
         - PolicyDocument:
             Version: "2012-10-17"
             Statement:
@@ -274,6 +299,13 @@ Resources:
                 Effect: Allow
                 Resource: "*"
           PolicyName: PcsRegisterInstancePolicy
+        - PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Action: "kms:*"
+                Effect: Allow
+                Resource: "*"
+          PolicyName: PcsKmsFullAccessPolicy
       Tags:
         - Key: cost_resource
           Value: !Sub '${AWS::StackName}'
@@ -339,16 +371,26 @@ Resources:
             # - mount -a -t efs defaults
             # - rsync -aA --ignore-existing /tmp/home/ /home
             # - rm -rf /tmp/home/
-            #!/bin/bash
-            mkdir -p /var/log/amazon/pcs
-            exec > >(tee -a /var/log/amazon/pcs/bootstrap.log | logger -t user-data -s 2>/dev/ttyS0) 2>&1
-
-            mkdir -p /etc/amazon/pcs
-            echo '{ "cluster": { "version": "Slurm_24.11", "disable_multithreading": true, "scheduler": "slurm", "base_os": "alinux2", "cluster_id": "${AWS::StackName}", "slurm": { "endpoint": "https://pcs.${AWS::Region}.api.aws" }}}' > /etc/amazon/pcs/bootstrap_config.json
-
-            cloud-init-per instance pcs-bootstrap-init /opt/aws/pcs/bin/pcs_bootstrap_init.sh /etc/amazon/pcs/bootstrap_config.json
-            cloud-init-per instance pcs-bootstrap-config /opt/aws/pcs/bin/pcs_bootstrap_config_per_instance.sh /etc/amazon/pcs/bootstrap_config.json
-            /opt/aws/pcs/bin/pcs_bootstrap_finalize.sh /etc/amazon/pcs/bootstrap_config.json
+            - mkdir -p /var/log/amazon/pcs
+            - mkdir -p /etc/amazon/pcs
+            - |
+              cat > /etc/amazon/pcs/bootstrap_config.json <<'EOF'
+              { "cluster": { "version": "Slurm_24.11", "disable_multithreading": true, "scheduler": "slurm", "base_os": "alinux2", "cluster_id": "${AWS::StackName}", "slurm": { "endpoint": "https://pcs.${AWS::Region}.api.aws" }}}
+              EOF
+            - cloud-init-per instance pcs-bootstrap-init /opt/aws/pcs/bin/pcs_bootstrap_init.sh /etc/amazon/pcs/bootstrap_config.json
+            - cloud-init-per instance pcs-bootstrap-config /opt/aws/pcs/bin/pcs_bootstrap_config_per_instance.sh /etc/amazon/pcs/bootstrap_config.json
+            - /opt/aws/pcs/bin/pcs_bootstrap_finalize.sh /etc/amazon/pcs/bootstrap_config.json
+            - bash -lc 'printf "%s\n" "#!/bin/bash" "touch /home/ec2-user/mount_s3.log" "mount_s3.sh >> /home/ec2-user/mount_s3.log 2>&1" > /home/ec2-user/mount_study.sh'
+            - chmod 755 /home/ec2-user/mount_study.sh
+            - chown ec2-user:ec2-user /home/ec2-user/mount_study.sh
+            - touch /home/ec2-user/mount_s3.log
+            - chown ec2-user:ec2-user /home/ec2-user/mount_s3.log
+            - chmod 644 /home/ec2-user/mount_s3.log
+            - bash -lc 'crontab -l 2>/dev/null > /tmp/crontab || true; if ! grep -Fq "/home/ec2-user/mount_study.sh" /tmp/crontab; then echo "@reboot sudo -u ec2-user /home/ec2-user/mount_study.sh" >> /tmp/crontab; crontab /tmp/crontab; fi'
+            - aws s3 cp --region "${AWS::Region}" "${EnvironmentInstanceFiles}/get_bootstrap.sh" "/tmp"
+            - chmod 500 /tmp/get_bootstrap.sh
+            - /tmp/get_bootstrap.sh "${EnvironmentInstanceFiles}" '${S3Mounts}'
+            - sudo -u ec2-user /home/ec2-user/mount_study.sh
 
             # If provided, mount FSxL filesystem as /shared
             # - if [ ! -z "${FSxLustreFilesystemId}" ]; then amazon-linux-extras install -y lustre=latest; mkdir -p /shared; chmod a+rwx /shared; mount -t lustre ${FSxLustreFilesystemId}.fsx.${AWS::Region}.amazonaws.com@tcp:/${FSxLustreFilesystemMountName} /shared; chmod 777 /shared; fi
@@ -401,16 +443,15 @@ Resources:
             # - mount -a -t efs defaults
             # - rsync -aA --ignore-existing /tmp/home/ /home
             # - rm -rf /tmp/home/
-            #!/bin/bash
-            mkdir -p /var/log/amazon/pcs
-            exec > >(tee -a /var/log/amazon/pcs/bootstrap.log | logger -t user-data -s 2>/dev/ttyS0) 2>&1
-
-            mkdir -p /etc/amazon/pcs
-            echo '{ "cluster": { "version": "Slurm_24.11", "disable_multithreading": true, "scheduler": "slurm", "base_os": "alinux2", "cluster_id": "${AWS::StackName}", "slurm": { "endpoint": "https://pcs.${AWS::Region}.api.aws" }}}' > /etc/amazon/pcs/bootstrap_config.json
-
-            cloud-init-per instance pcs-bootstrap-init /opt/aws/pcs/bin/pcs_bootstrap_init.sh /etc/amazon/pcs/bootstrap_config.json
-            cloud-init-per instance pcs-bootstrap-config /opt/aws/pcs/bin/pcs_bootstrap_config_per_instance.sh /etc/amazon/pcs/bootstrap_config.json
-            /opt/aws/pcs/bin/pcs_bootstrap_finalize.sh /etc/amazon/pcs/bootstrap_config.json
+            - mkdir -p /var/log/amazon/pcs
+            - mkdir -p /etc/amazon/pcs
+            - |
+              cat > /etc/amazon/pcs/bootstrap_config.json <<'EOF'
+              { "cluster": { "version": "Slurm_24.11", "disable_multithreading": true, "scheduler": "slurm", "base_os": "alinux2", "cluster_id": "${AWS::StackName}", "slurm": { "endpoint": "https://pcs.${AWS::Region}.api.aws" }}}
+              EOF
+            - cloud-init-per instance pcs-bootstrap-init /opt/aws/pcs/bin/pcs_bootstrap_init.sh /etc/amazon/pcs/bootstrap_config.json
+            - cloud-init-per instance pcs-bootstrap-config /opt/aws/pcs/bin/pcs_bootstrap_config_per_instance.sh /etc/amazon/pcs/bootstrap_config.json
+            - /opt/aws/pcs/bin/pcs_bootstrap_finalize.sh /etc/amazon/pcs/bootstrap_config.json
 
             # If provided, mount FSxL filesystem as /shared
             # - if [ ! -z "${FSxLustreFilesystemId}" ]; then amazon-linux-extras install -y lustre=latest; mkdir -p /shared; chmod a+rwx /shared; mount -t lustre ${FSxLustreFilesystemId}.fsx.${AWS::Region}.amazonaws.com@tcp:/${FSxLustreFilesystemMountName} /shared; fi
@@ -460,10 +501,10 @@ Resources:
       IamInstanceProfileArn: !GetAtt [PcsInstanceProfile, Arn] # Converted from nested stack output
       CustomLaunchTemplate:
         TemplateId: !Ref LoginLaunchTemplate # Converted from nested stack output
-        Version: 1
+        Version: !GetAtt LoginLaunchTemplate.LatestVersionNumber
       SubnetIds:
         - !Ref DefaultPublicSubnet
-      AmiId: ami-0bf564070da947c48
+      AmiId: ami-08608e2b2243c1f1b
       InstanceConfigs:
         - InstanceType: !FindInMap [Architecture, LoginNodeInstances, !Ref NodeArchitecture]
 
@@ -481,10 +522,10 @@ Resources:
       IamInstanceProfileArn: !GetAtt [PcsInstanceProfile, Arn] # Converted from nested stack output
       CustomLaunchTemplate:
         TemplateId: !Ref ComputeLaunchTemplate # Converted from nested stack output
-        Version: 1
+        Version: !GetAtt ComputeLaunchTemplate.LatestVersionNumber
       SubnetIds:
         - !Ref DefaultPrivateSubnet
-      AmiId: ami-0bf564070da947c48
+      AmiId: ami-08608e2b2243c1f1b
       InstanceConfigs:
         - InstanceType: !FindInMap [Architecture, ComputeNodeInstances, !Ref NodeArchitecture]
 
