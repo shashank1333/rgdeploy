@@ -52,7 +52,7 @@ Parameters:
   EBSVolumeSize:
     Description: The initial size of the volume (in GBs)  EBS will use for storage.
     Type: Number
-    Default: 32   
+    Default: 32
   KeyPair:
     Description: Name of an existing EC2 KeyPair to enable SSH access to the instance. If no key pairs exist, please create one from the button next to the dropdown. Please contact your Administrator if you are unable to create one.
     Type: AWS::EC2::KeyPair::KeyName
@@ -65,11 +65,11 @@ Parameters:
     Default: 0.0.0.0/0
     AllowedPattern: (\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})
     ConstraintDescription: must be a valid IP CIDR range of the form x.x.x.x/x.
-     
+
 Conditions:
   IamPolicyEmpty: !Equals [!Ref IamPolicyDocument, '{}']
 
-Resources:  
+Resources:
   SSMPolicy:
     Type: AWS::IAM::ManagedPolicy
     Properties:
@@ -82,7 +82,7 @@ Resources:
               - ssm:PutParameter
               - ssm:GetParameter
               - ssm:DescribeParameters
-            Resource: "*"  
+            Resource: "*"
   IAMRole:
     Type: 'AWS::IAM::Role'
     Properties:
@@ -104,7 +104,8 @@ Resources:
           - PolicyName: !Join ['-', [Ref: Namespace, 's3-studydata-policy']]
             PolicyDocument: !Ref IamPolicyDocument
       ManagedPolicyArns:
-        - Ref: SSMPolicy            
+        - Ref: SSMPolicy
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
 
   InstanceProfile:
     Type: 'AWS::IAM::InstanceProfile'
@@ -154,7 +155,7 @@ Resources:
                 X-GNOME-Autostart-enabled=true
                 Terminal=true
                 Name=Study-Mounting
-                Comment=Study Mounting                
+                Comment=Study Mounting
             "/home/ec2-user/mount_study.sh":
               mode: "000755"
               owner: "ec2-user"
@@ -164,7 +165,7 @@ Resources:
                 set -x
                 # Adding sleep to avoid mounting failure
                 sleep 30
-                mount_s3.sh 2>&1 >> /home/ec2-user/mount_s3.log                
+                mount_s3.sh 2>&1 >> /home/ec2-user/mount_s3.log
             "/home/ec2-user/start_igv.sh":
               mode: "000755"
               owner: "ec2-user"
@@ -174,7 +175,7 @@ Resources:
                 set -x
                 xhost +local:all
                 # Adding sleep to wait for study mounting
-                sleep 40                
+                sleep 40
                 docker run --rm -ti -v /home/ec2-user:/home/ec2-user --net=host -e DISPLAY=:1 relevancelab/igv-ide:1.1.0
             "/home/ec2-user/set_user_token.sh":
               mode: "000755"
@@ -185,11 +186,11 @@ Resources:
                 # trap '/opt/aws/bin/cfn-signal --exit-code 1 --resource EC2Instance --region ${AWS::Region} --stack ${AWS::StackName}' ERR
                 # Get the session token
                 TOKEN=$(curl -X PUT "http://169.254.169.254/latest/api/token" -H "X-aws-ec2-metadata-token-ttl-seconds: 21600")
-                
+
                 # Get the region to build the parameter name
                 region=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/placement/region)
                 echo "Retrieved region ${region} from metadata service"
-                
+
                 # Get the instance id to build the parameter name
                 instance_id=$(curl -H "X-aws-ec2-metadata-token: $TOKEN" http://169.254.169.254/latest/meta-data/instance-id)
 
@@ -197,7 +198,7 @@ Resources:
                 auth_token=`uuidgen`
                 parameter_name="/RL/RG/igv-viewer/auth-token/$instance_id"
                 aws ssm put-parameter --name "$parameter_name" --type "String" --value '{"auth_token":"'$auth_token'","session_id":"'$session_id'"}' --region $region --overwrite
-                echo "User token set successfully"              
+                echo "User token set successfully"
             "/home/ec2-user/supervisor/supervisord.conf":
               mode: "000644"
               owner: "ec2-user"
@@ -205,7 +206,7 @@ Resources:
               content: |
                 [unix_http_server]
                 file=/home/ec2-user/supervisor/supervisor.sock   ; the path to the socket file
-                
+
                 [supervisord]
                 logfile=/home/ec2-user/supervisor/supervisord.log ; main log file; default $CWD/supervisord.log
                 logfile_maxbytes=50MB                  ; max main logfile bytes b4 rotation; default 50MB
@@ -215,7 +216,7 @@ Resources:
                 nodaemon=false                         ; start in foreground if true; default false
                 minfds=1024                            ; min. avail startup file descriptors; default 1024
                 minprocs=200                           ; min. avail process descriptors;default 200
-                
+
                 [rpcinterface:supervisor]
                 supervisor.rpcinterface_factory = supervisor.rpcinterface:make_main_rpcinterface
 
@@ -237,7 +238,7 @@ Resources:
               content: "\n"
               mode: "000664"
               owner: "ec2-user"
-              group: "ec2-user"              
+              group: "ec2-user"
             "/home/ec2-user/disable_lock.sh":
               content: !Sub |
                 #!/bin/bash
@@ -260,7 +261,7 @@ Resources:
           #!/usr/bin/env bash
           exec > >(tee /var/log/user-data.log|logger -t user-data -s 2>/dev/console) 2>&1
           # trap '/opt/aws/bin/cfn-signal --exit-code 1 --resource EC2Instance --region ${AWS::Region} --stack ${AWS::StackName}' ERR
-          
+
           # Install supervisor and start on boot
           pip3 install supervisor crudini
 
@@ -272,7 +273,7 @@ Resources:
           cat << EOF > /usr/local/bin/start-dcv-session
           dcv create-session rg-session --name rg-session --user ec2-user --owner ec2-user
           EOF
-          
+
           # Create dcv session on reboot
           chown root: "/usr/local/bin/start-dcv-session"
           chmod 775 "/usr/local/bin/start-dcv-session"
@@ -291,7 +292,7 @@ Resources:
 
           # Run init script to create files
           /opt/aws/bin/cfn-init --verbose --stack ${AWS::StackName} --resource EC2Instance --region ${AWS::Region}
-          
+
           # Add command to start on reboot
           crontab -l 2>/dev/null > "/tmp/crontab"
           sh "/usr/local/bin/start-dcv-session"
@@ -302,7 +303,7 @@ Resources:
           # Restart DCV session to start igv
           dcv close-session rg-session
           sh "/usr/local/bin/start-dcv-session"
-          
+
           # Remove password and lock for ec2-user
           passwd -l ec2-user
           dcv create-session lock-session --name lock-session --user ec2-user --owner ec2-user --init /home/ec2-user/disable_lock.sh
@@ -314,9 +315,6 @@ Resources:
 
           /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource EC2Instance --region ${AWS::Region}
 
-          
-
-          
       InstanceType: !Ref 'InstanceType'
       SecurityGroups: [!Ref 'InstanceSecurityGroup']
       KeyName: !Ref 'KeyPair'
@@ -338,8 +336,8 @@ Resources:
           Value: EC2 workspace instance
         - Key: cost_resource
           Value: !Sub ${AWS::StackName}
-  
-  
+
+
   InstanceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -353,7 +351,7 @@ Resources:
         FromPort: '8443'
         ToPort: '8443'
         CidrIp: !Ref 'AllowedIpAddress'
-        
+
 
 Outputs:
   InstanceId:

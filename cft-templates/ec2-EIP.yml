@@ -29,7 +29,7 @@ Parameters:
   EBSVolumeSize:
     Description: The initial size of the volume (in GBs)  EBS will use for storage.
     Type: Number
-    Default: 8  
+    Default: 8
   KeyPair:
     Description: Name of an existing EC2 KeyPair to enable SSH access to the instance. If no key pairs exist, please create one from the button next to the dropdown. Please contact your Administrator if you are unable to create one.
     Type: AWS::EC2::KeyPair::KeyName
@@ -47,12 +47,12 @@ Parameters:
     Default: '/aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2'
   AvailabilityZone:
     Description: Select the availability zone in which to create the instance. If you plan to attach a secondary volume to the instance, create this instance in the same AvailabilityZone as the volume you created.
-    Type: AWS::EC2::AvailabilityZone::Name    
+    Type: AWS::EC2::AvailabilityZone::Name
 
 Conditions:
   IamPolicyEmpty: !Equals [!Ref IamPolicyDocument, '{}']
 
-Resources:  
+Resources:
   IAMRole:
     Type: 'AWS::IAM::Role'
     Properties:
@@ -67,6 +67,8 @@ Resources:
                 - 'ec2.amazonaws.com'
             Action:
               - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
       Policies:
         - !If
           - IamPolicyEmpty
@@ -115,7 +117,7 @@ Resources:
           Value: EC2 workspace instance
         - Key: cost_resource
           Value: !Sub ${AWS::StackName}
-  
+
   InstanceSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:

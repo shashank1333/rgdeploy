@@ -1,4 +1,4 @@
-Metadata: 
+Metadata:
   License: Apache-2.0
 AWSTemplateFormatVersion: '2010-09-09'
 Description: 'AWS CloudFormation Template to create an GPU based EC2 windows instance with NICE DCV pre installed..'
@@ -13,10 +13,10 @@ Parameters:
     Description: The administrator password must be at least six characters long and include characters from at least three of the following categories- English uppercase letters, English lowercase letters, base-10 digits and non-alphabetic symbols.
   S3Mounts:
     Type: String
-    Description: A JSON array of objects with name, bucket, and prefix properties used to mount data  
+    Description: A JSON array of objects with name, bucket, and prefix properties used to mount data
   IamPolicyDocument:
     Type: String
-    Description: The IAM policy to be associated with the launched workstation 
+    Description: The IAM policy to be associated with the launched workstation
   VPC:
     Description: The VPC in which the EC2 instance will reside
     Type: AWS::EC2::VPC::Id
@@ -25,10 +25,10 @@ Parameters:
     Type: AWS::EC2::Subnet::Id
   ALBSecurityGroup:
     Description: Security Group Id of the ALB to which the EC2 instance traffic will be allowed from
-    Type: AWS::EC2::SecurityGroup::Id    
-  WorkSpaceSecurityGroup:  
+    Type: AWS::EC2::SecurityGroup::Id
+  WorkSpaceSecurityGroup:
     Description: Security Group Id of the workspace to which the EC2 instance traffic will be allowed from
-    Type: AWS::EC2::SecurityGroup::Id 
+    Type: AWS::EC2::SecurityGroup::Id
   EnvironmentInstanceFiles:
     Type: String
     Description: >-
@@ -43,7 +43,7 @@ Parameters:
       [
         t3.medium,
         t3.large,
-        t3.xlarge,  
+        t3.xlarge
       ]
     ConstraintDescription: must be a valid EC2 instance type.
   EBSVolumeSize:
@@ -100,7 +100,7 @@ Resources:
           - Effect: Allow
             Action:
               - 'sts:*'
-            Resource: '*'          
+            Resource: '*'
           - Effect: Allow
             Action:
               - 'kms:*'
@@ -119,16 +119,16 @@ Resources:
             Resource: '*'
           - Effect: Allow
             Action:
-              - 'sns:Publish'     
-            Resource: '*'          
+              - 'sns:Publish'
+            Resource: '*'
           - Effect: Deny
             NotAction:
               - 's3:*'
               - 'ssm:*'
               - 'kms:*'
               - 'sts:*'
-            NotResource: '*'   
-          
+            NotResource: '*'
+
 
   IAMRole:
     Type: 'AWS::IAM::Role'
@@ -153,7 +153,7 @@ Resources:
       ManagedPolicyArns:
         - Ref: SSMPolicy
         - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
-      PermissionsBoundary: !Ref InstanceRolePermissionBoundary        
+      PermissionsBoundary: !Ref InstanceRolePermissionBoundary
 
   InstanceProfile:
     Type: 'AWS::IAM::InstanceProfile'
@@ -187,7 +187,7 @@ Resources:
                 echo "Installing win-nice-dcv-auth-svc"
                 python "C:\Program Files\ResearchGateway\win-nice-dcv-auth-svc\win-nice-dcv-auth-svc.py" --startup auto install
                 echo "Starting win-nice-dcv-auth-svc"
-                python "C:\Program Files\ResearchGateway\win-nice-dcv-auth-svc\win-nice-dcv-auth-svc.py" start 
+                python "C:\Program Files\ResearchGateway\win-nice-dcv-auth-svc\win-nice-dcv-auth-svc.py" start
                 timeout /t 5 /nobreak
                 echo "running test for win-nice-dcv-auth-svc \n Expected response : <auth result="No"><username>Administrator</username></auth>"
                 echo "test result :"
@@ -220,10 +220,10 @@ Resources:
                         Write-Host "Step 2/3 Installing service ..."
                         python "C:\\Program Files\\win-nice-dcv-auth-svc\\win-nice-dcv-auth-svc.py" --startup auto install
                         Write-Host "Step 3/3 Starting service...."
-                        python "C:\\Program Files\\win-nice-dcv-auth-svc\\win-nice-dcv-auth-svc.py" start        
+                        python "C:\\Program Files\\win-nice-dcv-auth-svc\\win-nice-dcv-auth-svc.py" start
                     }
                     $svcstatus = ((Get-Service -Name $serviceName).Status)
-                    Write-Host "Service '$serviceName' is $svcstatus."    
+                    Write-Host "Service '$serviceName' is $svcstatus."
                 }
             "C:/Program Files/ResearchGateway/set_user_token.bat":
               content: |
@@ -251,14 +251,14 @@ Resources:
 
     CreationPolicy:
       ResourceSignal:
-        Timeout: "PT30M"   
+        Timeout: "PT30M"
     Properties:
       LaunchTemplate:
         LaunchTemplateName: "RG-IMDSv2"
-        Version: 1              
+        Version: 1
       UserData:
         Fn::Base64: !Sub |
-          <powershell>     
+          <powershell>
           # Redirect stdout and stderr to a log file and the console
           $scriptPath = "C:\Users\Administrator\log\user-data.log"
           Start-Transcript -Path $scriptPath -Append
@@ -276,8 +276,8 @@ Resources:
           if (!(Test-Path -Path $rgfolder )) {
             Write-Host "$rgfolder does not exist. Creating."
             New-Item -Path "$rgfolder" -ItemType "directory" -Force
-          }        
-          Write-Host "Extracting files to $rgfolder"         
+          }
+          Write-Host "Extracting files to $rgfolder"
           Expand-Archive -Path "C:\\Users\\Administrator\\ec2-secure-windows.zip" -DestinationPath "$rgfolder" -Force
           & "$rgfolder/install_custom_auth.bat" *> "C:\\Users\\Administrator\\log\\install-custom-auth.log"
           Write-Host "Cleaning up downloaded zip file"
@@ -285,7 +285,7 @@ Resources:
           Write-Host "copying C:\Program Files\ResearchGateway\default.perm to C:\Program Files\NICE\DCV\Server\conf\default.perm"
           Copy-Item -Path "C:\Program Files\ResearchGateway\default.perm" -Destination "C:\Program Files\NICE\DCV\Server\conf\default.perm" -Force
           Write-Host "Restarting dcvserver"
-          Restart-Service dcvserver    
+          Restart-Service dcvserver
 
           Write-Host "Fixing Startup files"
           Copy-Item -Path "C:/Program Files/ResearchGateway/mount_s3.bat" -Destination "C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup\" -Force
@@ -351,6 +351,6 @@ Outputs:
   InstanceId:
     Description: InstanceId of the newly created EC2 instance
     Value: !Ref "EC2Instance"
-  AvailabilityZone: 
+  AvailabilityZone:
     Description: AvailabilityZone of newly created EC2 instance
     Value: !GetAtt [EC2Instance, AvailabilityZone]

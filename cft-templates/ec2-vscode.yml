@@ -59,6 +59,8 @@ Resources:
                 - 'ec2.amazonaws.com'
             Action:
               - 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
       Policies:
         - !If
           - IamPolicyEmpty
@@ -196,12 +198,7 @@ Resources:
     Properties:
       ImageId : '{{resolve:ssm:/RL/RG/StandardCatalog/VS-Code}}'
       InstanceType: !Ref 'InstanceType'
-      AvailabilityZone: !Ref AvailabilityZone
-      BlockDeviceMappings:
-        - DeviceName: /dev/xvda
-          Ebs:
-            VolumeSize: 32
-            Encrypted: false      
+      AvailabilityZone: !Ref AvailabilityZone     
       SecurityGroups: [!Ref 'EC2SecurityGroup']
       KeyName: !Ref 'KeyPair'
       IamInstanceProfile: !Ref InstanceProfile

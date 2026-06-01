@@ -111,7 +111,7 @@ Resources:
             Effect: Deny
             Principal: '*'
             Action: 's3:*'
-            Resource: 
+            Resource:
               - !Sub '${DeploymentBucket.Arn}'
               - !Sub '${DeploymentBucket.Arn}/*'
             Condition:
@@ -121,7 +121,7 @@ Resources:
             Effect: Deny
             Principal: '*'
             Action: 's3:*'
-            Resource: 
+            Resource:
               - !Sub '${DeploymentBucket.Arn}'
               - !Sub '${DeploymentBucket.Arn}/*'
             Condition:
